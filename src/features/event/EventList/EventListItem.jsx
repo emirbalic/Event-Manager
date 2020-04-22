@@ -12,9 +12,10 @@ class EventListItem extends Component {
             <Item>
               <Item.Image size='tiny' circular src={event.hostPhotoURL} />
               <Item.Content>
-                <Item.Header as='a'>{event.title}</Item.Header>
+              {/* as='a' */}
+                <Item.Header >{event.title}</Item.Header>
                 <Item.Description>
-                  Hosted by <a>{event.hostedBy}</a>
+                  Hosted by {event.hostedBy}
                 </Item.Description>
               </Item.Content>
             </Item>
@@ -28,7 +29,9 @@ class EventListItem extends Component {
         </Segment>
         <Segment secondary>
           <List horizontal>
-            {event.attendees.map((attendee) => (
+            {/* very cool conditional
+            https://www.udemy.com/course/build-an-app-with-react-redux-and-firestore-from-scratch/learn/lecture/10199648#questions */}
+            {event.attendees && event.attendees.map((attendee) => (
               <EventListAtendee key={attendee.id} attendee={attendee} />
             ))}
           </List>

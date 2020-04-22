@@ -2,35 +2,93 @@ import React, { Component } from 'react';
 import { Segment, Form, Button } from 'semantic-ui-react';
 
 export default class EventForm extends Component {
+  state = {
+    // not necessary because when values entered the state would be created, but better this way
+    title: '',
+    date: '',
+    city: '',
+    venue: '',
+    hostedBy: '',
+  };
+  handleFormSubmit = (event) => {
+    event.preventDefault();
+    this.props.createEvent(this.state);
+  };
+
+  // handlesInputChange = (event) => {
+  //   this.setState({
+  //     [event.target.name]: event.target.value,
+  //   });
+  // };
+
+  // destructured version - a little more concise
+  // https://www.udemy.com/course/build-an-app-with-react-redux-and-firestore-from-scratch/learn/lecture/10199636#questions/9058616
+  handlesInputChange = ({target : {name, value}}) => {
+    this.setState({
+      [name]: value
+    });
+  };
   render() {
-    const {cancelOpeningForm} = this.props;
+    const { cancelOpeningForm } = this.props;
+    const { title, date, city, venue, hostedBy } = this.state;
+
     return (
       <Segment>
-        <Form>
+        {/* autoComplete='off' */}
+        <Form onSubmit={this.handleFormSubmit}>
           <Form.Field>
             <label>Event Title</label>
-            <input placeholder='First Name' />
+            {/* ref='title' */}
+            <input
+              name='title'
+              onChange={this.handlesInputChange}
+              value={title}
+              placeholder='Title of the event'
+            />
           </Form.Field>
           <Form.Field>
             <label>Event Date</label>
-            <input type='date' placeholder='Event Date' />
+            <input
+              name='date'
+              onChange={this.handlesInputChange}
+              value={date}
+              type='date'
+              placeholder='Event Date'
+            />
           </Form.Field>
           <Form.Field>
             <label>City</label>
-            <input placeholder='City event is taking place' />
+            <input
+              name='city'
+              onChange={this.handlesInputChange}
+              value={city}
+              placeholder='City event is taking place'
+            />
           </Form.Field>
           <Form.Field>
             <label>Venue</label>
-            <input placeholder='Enter the Venue of the event' />
+            <input
+              name='venue'
+              onChange={this.handlesInputChange}
+              value={venue}
+              placeholder='Enter the Venue of the event'
+            />
           </Form.Field>
           <Form.Field>
             <label>Hosted By</label>
-            <input placeholder='Enter the name of person hosting' />
+            <input
+              name='hostedBy'
+              onChange={this.handlesInputChange}
+              value={hostedBy}
+              placeholder='Enter the name of person hosting'
+            />
           </Form.Field>
           <Button positive type='submit'>
             Submit
           </Button>
-          <Button onClick={cancelOpeningForm} type='button'>Cancel</Button>
+          <Button onClick={cancelOpeningForm} type='button'>
+            Cancel
+          </Button>
         </Form>
       </Segment>
     );
