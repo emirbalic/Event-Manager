@@ -10,9 +10,22 @@ export default class EventForm extends Component {
     venue: '',
     hostedBy: '',
   };
-  handleFormSubmit = (event) => {
-    event.preventDefault();
-    this.props.createEvent(this.state);
+
+  componentDidMount() {
+    if (this.props.selectedEvent !== null) {
+      this.setState({
+        ...this.props.selectedEvent,
+      });
+    }
+  }
+
+  handleFormSubmit = (evt) => {
+    evt.preventDefault();
+    if (this.state.id) {
+      this.props.updateEvent(this.state);
+    } else {
+      this.props.createEvent(this.state);
+    }
   };
 
   // handlesInputChange = (event) => {
@@ -23,9 +36,9 @@ export default class EventForm extends Component {
 
   // destructured version - a little more concise
   // https://www.udemy.com/course/build-an-app-with-react-redux-and-firestore-from-scratch/learn/lecture/10199636#questions/9058616
-  handlesInputChange = ({target : {name, value}}) => {
+  handlesInputChange = ({ target: { name, value } }) => {
     this.setState({
-      [name]: value
+      [name]: value,
     });
   };
   render() {
