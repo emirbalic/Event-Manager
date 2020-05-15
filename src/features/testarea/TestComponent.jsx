@@ -5,6 +5,8 @@ import { Button } from 'semantic-ui-react';
 import TestPlaceInput from './TestPlaceInput';
 import SimpleMap from './SimpleMap';
 
+import { openModal } from '../modals/modalActions';
+
 import { geocodeByAddress, getLatLng } from 'react-places-autocomplete';
 
 const mapStateToProps = (state) => {
@@ -18,6 +20,7 @@ const mapDispatchToProps = {
 
   incrementCounter,
   decrementCounter,
+  openModal
 };
 
 // const getCoordinates = (dataFromInput) => {
@@ -27,8 +30,8 @@ class TestComponent extends Component {
   state = {
     latlng: {
       lat: 59.95,
-      lng: 30.33
-    }
+      lng: 30.33,
+    },
   };
 
   handleSelect = (address) => {
@@ -43,18 +46,26 @@ class TestComponent extends Component {
   };
 
   render() {
-    const { data, incrementCounter, decrementCounter } = this.props;
+    const { data, incrementCounter, decrementCounter, openModal } = this.props;
     return (
       <div>
         <h1>Test Component</h1>
         <h3>The Answer is: {data}</h3>
         <Button onClick={incrementCounter} positive content='Increment' />
         <Button onClick={decrementCounter} negative content='Decrement' />
+        <Button
+          onClick={() => openModal('TestModal', { data: 42 })}
+          color='teal'
+          content='Open Modal'
+        />
         <br />
         <br />
         <br />
-        <TestPlaceInput selectAddress={this.handleSelect}/>
-        <SimpleMap key={this.state.latlng.lat + this.state.latlng.lng} latlng={this.state.latlng}/>
+        <TestPlaceInput selectAddress={this.handleSelect} />
+        <SimpleMap
+          key={this.state.latlng.lat + this.state.latlng.lng}
+          latlng={this.state.latlng}
+        />
       </div>
     );
   }
