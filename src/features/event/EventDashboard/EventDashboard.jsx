@@ -6,9 +6,11 @@ import EventList from '../EventList/EventList';
 // import EventForm from '../EventForm/EventForm';
 // import cuid from 'cuid';
 import { createEvent, updateEvent, deleteEvent } from '../eventActions';
+import LoadingComponent from '../../../app/layout/LoadingComponent';
 
 const mapStateToProps = (state) => ({
   events: state.events,
+  loading: state.async.loading
 });
 
 const mapDispatchToProps = {
@@ -103,7 +105,8 @@ class EventDashboard extends Component {
   };
   render() {
     // const { isOpen, selectedEvent } = this.state;
-    const { events } = this.props;
+    const { events, loading } = this.props;
+    if(loading) return <LoadingComponent/>
 
     return (
       <Grid>
