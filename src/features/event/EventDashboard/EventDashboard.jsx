@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Grid} from 'semantic-ui-react'; //, Button 
+import { Grid } from 'semantic-ui-react'; //, Button
 import { connect } from 'react-redux';
 
 import EventList from '../EventList/EventList';
@@ -8,10 +8,11 @@ import EventList from '../EventList/EventList';
 import { createEvent, updateEvent, deleteEvent } from '../eventActions';
 import LoadingComponent from '../../../app/layout/LoadingComponent';
 import EventActivity from '../EventActivity/EventActivity';
+import { firestoreConnect } from 'react-redux-firebase';
 
 const mapStateToProps = (state) => ({
-  events: state.events,
-  loading: state.async.loading
+  events: state.firestore.ordered.events,
+  loading: state.async.loading,
 });
 
 const mapDispatchToProps = {
@@ -44,7 +45,7 @@ class EventDashboard extends Component {
 
   // these two are from
   // https://www.udemy.com/course/build-an-app-with-react-redux-and-firestore-from-scratch/learn/lecture/10199736#questions/4804710
-  
+
   // handleCreateFormOpen = () => {
   //   this.setState({
   //     isOpen: true,
@@ -61,13 +62,12 @@ class EventDashboard extends Component {
   //   newEvent.id = cuid();
   //   newEvent.hostPhotoURL = '/assets/user.png';
 
-    
   //   // this.setState(({ events }) => ({
   //   //   // == PREVIOUS VERSION WO REDUX ==
   //   //     // events: [...events, newEvent],
   //   //     isOpen: false,
   //   //   }));
-   
+
   //     // == VERSION W REDUX ==
   //     this.props.createEvent(newEvent);
   // };
@@ -107,7 +107,7 @@ class EventDashboard extends Component {
   render() {
     // const { isOpen, selectedEvent } = this.state;
     const { events, loading } = this.props;
-    if(loading) return <LoadingComponent/>
+    if (loading) return <LoadingComponent />;
 
     return (
       <Grid>
@@ -119,7 +119,7 @@ class EventDashboard extends Component {
           />
         </Grid.Column>
         <Grid.Column width={6}>
-          <EventActivity/>
+          <EventActivity />
           {/* <Button
             onClick={this.handleCreateFormOpen}
             positive
@@ -143,4 +143,7 @@ class EventDashboard extends Component {
   }
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(EventDashboard);
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(firestoreConnect([{ collection: 'events' }])(EventDashboard));
