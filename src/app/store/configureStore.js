@@ -8,8 +8,10 @@ import firebase from '../config/firebase';
 
 const rrfConfig = {
   userProfile: 'users',
+  // << used in 136:4:49 for render in index.js>>
   attachAuthIsReady: true,
   useFirestoreForProfile: true,
+  updateProfileOnLogin: false
 };
 
 export const configureStore = () => {
