@@ -52,7 +52,7 @@ const EventDetailedInfo = ({ event }) => {
       </Segment>
       {isMapOpen && (
         <EventDetailedMap
-          lat={event.venueLatLng.lat}
+            lat={event.venueLatLng.lat}
           lng={event.venueLatLng.lng}
         />
       )}
