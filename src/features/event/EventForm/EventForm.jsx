@@ -19,13 +19,15 @@ import {
   hasLengthGreaterThan,
 } from 'revalidate';
 
-import { createEvent, updateEvent } from '../eventActions.js';
-import cuid from 'cuid';
+import { createEvent, updateEvent, cancelToggle } from '../eventActions.js';
+// import cuid from 'cuid';
 import TextInput from '../../../app/common/form/TextInput.jsx';
 import TextArea from '../../../app/common/form/TextArea.jsx';
 import SelectInput from '../../../app/common/form/SelectInput.jsx';
 import DateInput from '../../../app/common/form/DateInput.jsx';
 import PlaceInput from '../../../app/common/form/PlaceInput.jsx';
+import { withFirestore } from 'react-redux-firebase';
+// import { toastr } from 'react-redux-toastr';
 
 const mapStateToProps = (state, ownProps) => {
   const eventId = ownProps.match.params.id;
@@ -37,18 +39,26 @@ const mapStateToProps = (state, ownProps) => {
     // venue: '',
     // hostedBy: '',
   };
-
-  if (eventId && state.events.length > 0) {
-    event = state.events.filter((event) => event.id === eventId)[0];
+  //state.firestore.ordered.events
+  if (
+    state.firestore.ordered.events &&
+    state.firestore.ordered.events.length > 0
+  ) {
+    event =
+      state.firestore.ordered.events.filter(
+        (event) => event.id === eventId
+      )[0] || {};
   }
   return {
     initialValues: event,
+    event,
   };
 };
 
 const actions = {
   createEvent,
   updateEvent,
+  cancelToggle,
 };
 
 const category = [
@@ -60,23 +70,53 @@ const category = [
   { key: 'travel', text: 'Travel', value: 'travel' },
 ];
 
-const validate = combineValidators ({
-  title: isRequired({message:'The event title is required'}),
-  category: isRequired({message: 'The category is required'}),
+const validate = combineValidators({
+  title: isRequired({ message: 'The event title is required' }),
+  category: isRequired({ message: 'The category is required' }),
   description: composeValidators(
-    isRequired({message: 'Description is required'}),
-    hasLengthGreaterThan(10 )({message:'Minimum lenght of description is 10 characters'})
-    )(),
-    city: isRequired('City'),
-    venue: isRequired('Venue'),
-    date: isRequired('date') 
+    isRequired({ message: 'Description is required' }),
+    hasLengthGreaterThan(10)({
+      message: 'Minimum lenght of description is 10 characters',
+    })
+  )(),
+  city: isRequired('City'),
+  venue: isRequired('Venue'),
+  date: isRequired('date'),
 });
 class EventForm extends Component {
-
   state = {
     cityLatLng: {},
-    venueLatLng: {}
+    venueLatLng: {},
+  };
+
+  async componentDidMount() {
+    const { firestore, match } = this.props;
+    // === THE VERSION THAT LISTENS TO DATA === setListener()
+    // >> NB. this versions need to unset the listener when unmount, unlike using connect() <<
+    await firestore.setListener(`events/${match.params.id}`);
+
+
+    // === THE VERSION THAT GETS DATA === get()
+    // const { firestore, match, history } = this.props;
+    // // << getting the event from firestore that matches the parameters of the route >>
+    // let event = await firestore.get(`events/${match.params.id}`);
+    // if (!event.exists) {
+    //   history.push('/events');
+    //   toastr.error('Sorry', 'Event not found');
+    // } else {
+    //   this.setState({
+    //     // because it otherwise would be null ...
+    //     venueLatLng: event.data().venueLatLng,
+      // });
+    // }
   }
+
+  async componentWillUnmount() {
+    const { firestore, match } = this.props;
+    await firestore.unsetListener(`events/${match.params.id}`);
+
+  }
+
   // state = { ...this.props.event };
 
   // componentDidMount() {
@@ -87,48 +127,55 @@ class EventForm extends Component {
   //   }
   // }
 
-  onFormSubmit = (values) => {
-    values.venueLatLng = this.state.venueLatLng;
-    if (this.props.initialValues.id) {
-      this.props.updateEvent(values);
-      this.props.history.push(`/events/${this.props.initialValues.id}`);
-    } else {
-      const newEvent = {
-        ...values,
-        id: cuid(),
-        hostPhotoURL: '/assets/user.png',
-        hostedBy: 'Bob',
-      };
-      this.props.createEvent(newEvent);
-      this.props.history.push(`/events/${newEvent.id}`);
-      // this.props.history.push(`/events`);
+  onFormSubmit = async (values) => {
+    try {
+      values.venueLatLng = this.state.venueLatLng;
+      if (this.props.initialValues.id) {
+        if(Object.keys(values.venueLatLng).length === 0) {
+          values.venueLatLng = this.props.event.venueLatLng
+        }
+        this.props.updateEvent(values);
+        this.props.history.push(`/events/${this.props.initialValues.id}`);
+      } else {
+        // const newEvent = {
+        //   ...values,
+        //   id: cuid(),
+        //   hostPhotoURL: '/assets/user.png',
+        //   hostedBy: 'Bob',
+        // };
+        let createdEvent = await this.props.createEvent(values);
+        this.props.history.push(`/events/${createdEvent.id}`);
+        // this.props.history.push(`/events`);
+      }
+    } catch (error) {
+      console.log(error);
     }
   };
 
-  handleCitySelect = selectedCity => {
+  handleCitySelect = (selectedCity) => {
     geocodeByAddress(selectedCity)
-    .then(results => getLatLng(results[0]))
-    .then(latlng => {
-      this.setState({
-        cityLatLng: latlng 
+      .then((results) => getLatLng(results[0]))
+      .then((latlng) => {
+        this.setState({
+          cityLatLng: latlng,
+        });
       })
-    })
-    .then(() => {
-      this.props.change('city', selectedCity)
-    })
-  }
-  handleVenueSelect = selectedVenue => {
+      .then(() => {
+        this.props.change('city', selectedCity);
+      });
+  };
+  handleVenueSelect = (selectedVenue) => {
     geocodeByAddress(selectedVenue)
-    .then(results => getLatLng(results[0]))
-    .then(latlng => {
-      this.setState({
-        venueLatLng: latlng 
+      .then((results) => getLatLng(results[0]))
+      .then((latlng) => {
+        this.setState({
+          venueLatLng: latlng,
+        });
       })
-    })
-    .then(() => {
-      this.props.change('venue', selectedVenue)
-    })
-  }
+      .then(() => {
+        this.props.change('venue', selectedVenue);
+      });
+  };
 
   // handlesInputChange = (event) => {
   //   this.setState({
@@ -148,7 +195,15 @@ class EventForm extends Component {
     // const { cancelOpeningForm } = this.props;
     // const { title, date, city, venue, hostedBy } = this.state;
 
-    const { history, initialValues, invalid, submitting, pristine } = this.props;
+    const {
+      history,
+      initialValues,
+      invalid,
+      submitting,
+      pristine,
+      event,
+      cancelToggle,
+    } = this.props;
 
     return (
       <Grid>
@@ -180,21 +235,21 @@ class EventForm extends Component {
               <Field
                 name='city'
                 component={PlaceInput}
-                options={{types: ['(cities)']}}
+                options={{ types: ['(cities)'] }}
                 onSelect={this.handleCitySelect}
                 placeholder='Event City'
-                />
+              />
               <Field
                 name='venue'
                 component={PlaceInput}
                 options={{
                   location: new google.maps.LatLng(this.state.cityLatLng),
                   radius: 1000,
-                  types: ['establishment']
+                  types: ['establishment'],
                 }}
                 onSelect={this.handleVenueSelect}
                 placeholder='Event Venue'
-                />
+              />
               <Field
                 name='date'
                 component={DateInput}
@@ -204,7 +259,11 @@ class EventForm extends Component {
                 placeholder='Event Date'
               />
 
-              <Button disabled={invalid || submitting || pristine} positive type='submit'>
+              <Button
+                disabled={invalid || submitting || pristine}
+                positive
+                type='submit'
+              >
                 Submit
               </Button>
               <Button
@@ -217,6 +276,13 @@ class EventForm extends Component {
               >
                 Cancel
               </Button>
+              <Button
+                type='button'
+                color={event.cancelled ? 'green' : 'red'}
+                floated='right'
+                content={event.cancelled ? 'Reactivate event' : 'Cancel event'}
+                onClick={() => cancelToggle(!event.cancelled, event.id)}
+              />
             </Form>
           </Segment>
         </GridColumn>
@@ -225,10 +291,16 @@ class EventForm extends Component {
   }
 }
 
-export default connect(
-  mapStateToProps,
-  actions
-)(reduxForm({ form: 'eventForm', validate })(EventForm));
+export default withFirestore(
+  connect(
+    mapStateToProps,
+    actions
+  )(
+    reduxForm({ form: 'eventForm', validate, enableReinitialize: true })(
+      EventForm
+    )
+  )
+);
 
 // <Form.Field>
 //           <label>Event Title</label>
