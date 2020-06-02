@@ -18,7 +18,7 @@ const mapDispatchToProps = {
 const mapStateToProps = (state) => {
   return {
     auth: state.firebase.auth,
-    profile: state.firebase.profile
+    profile: state.firebase.profile,
   };
 };
 
@@ -72,6 +72,7 @@ class NavBar extends Component {
           )}
           {authenticated ? (
             <SignedInMenu
+              auth={auth}
               profile={profile}
               signOut={this.handleSignOut}
             />
@@ -87,4 +88,6 @@ class NavBar extends Component {
   }
 }
 
-export default withRouter(withFirebase(connect(mapStateToProps, mapDispatchToProps)(NavBar)));
+export default withRouter(
+  withFirebase(connect(mapStateToProps, mapDispatchToProps)(NavBar))
+);
