@@ -97,7 +97,7 @@ export const getEventsForDashboard = (lastEvent) => async (
   const eventsRef = firestore.collection('events');
 
   try {
-    dispatch(asyncActionStart()); 
+    dispatch(asyncActionStart());
     let startAfter =
       lastEvent &&
       (await firestore.collection('events').doc(lastEvent.id).get());
@@ -112,13 +112,13 @@ export const getEventsForDashboard = (lastEvent) => async (
           .startAfter(startAfter)
           .limit(2))
       : (query = eventsRef
-        // .where('date', '>=', today)
-        .orderBy('date')
-        .limit(2));
+          // .where('date', '>=', today)
+          .orderBy('date')
+          .limit(2));
 
     let querySnapshot = await query.get();
 
-    if(querySnapshot.docs.length === 0) {
+    if (querySnapshot.docs.length === 0) {
       dispatch(asyncActionFinish());
       return querySnapshot;
     }
@@ -132,14 +132,38 @@ export const getEventsForDashboard = (lastEvent) => async (
       };
       events.push(evt);
     }
-    
+
     dispatch({ type: FETCH_EVENTS, payload: { events } });
     dispatch(asyncActionFinish());
     return querySnapshot;
-
   } catch (error) {
     console.log(error);
     dispatch(asyncActionError());
+  }
+};
+
+export const addEventComment = (eventId, values, parentId) => async (
+  dispatch,
+  getState,
+  { getFirebase }
+) => {
+  const firebase = getFirebase();
+  const profile = getState().firebase.profile;
+  const user = firebase.auth().currentUser;
+  let newComment = {
+    parentId: parentId,
+    displayName: profile.displayName,
+    photoURL: profile.photoURL || '/assets/user.png',
+    uid: user.uid,
+    text: values.comment,
+    date: Date.now()
+  }
+
+  try {
+    await firebase.push(`event_chat/${eventId}`, newComment);
+  } catch (error) {
+    console.log(error);
+    toastr.error('Oops', 'Cannot add comment');
   }
 };
 
