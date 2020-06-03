@@ -12,6 +12,7 @@ import { UserDetailedEvents } from './UserDetailedEvents';
 
 import { userDetailedQuery } from '../userQueries';
 import LoadingComponent from '../../../app/layout/LoadingComponent';
+import { getUserEvents } from '../userActions';
 
 // with ownProps I get the access to params being set in the URL
 const mapStateToProps = (state, ownProps) => {
@@ -30,35 +31,58 @@ const mapStateToProps = (state, ownProps) => {
   return {
     profile, //: state.firebase.profile,
     userUid,
+    events: state.events,
+    eventsLoading: state.async.loading,
     auth: state.firebase.auth,
     photos: state.firestore.ordered.photos,
-    requesting: state.firestore.status.requesting
+    requesting: state.firestore.status.requesting,
   };
 };
-
+// actions
+const mapDispatchToProps = {
+  getUserEvents,
+};
 class UserDetailedPage extends Component {
+  async componentDidMount() {
+    let events = await this.props.getUserEvents(this.props.userUid);
+    console.log(events);
+  }
+  
+  changeTab = (e, data) => {
+    this.props.getUserEvents(this.props.userUid, data.activeIndex);
+  }
+ 
   render() {
-    const { profile, photos, auth, match, requesting } = this.props;
-    // combination of auth, match to see if the user is current user 
-    const isCurrentUser = auth.uid === match.params.id; 
+    const {
+      profile,
+      photos,
+      auth,
+      match,
+      requesting,
+      events,
+      eventsLoading,
+    } = this.props;
+    // combination of auth, match to see if the user is current user
+    const isCurrentUser = auth.uid === match.params.id;
 
-    // Object.values to get properties from requesting to check any for 'true' 
+    // Object.values to get properties from requesting to check any for 'true'
     // i.e. check for any prop in object if it is true
-    const loading = Object.values(requesting).some(a => a === true);
-    if (loading) return <LoadingComponent/>
+    const loading = Object.values(requesting).some((a) => a === true);
+
+    if (loading) return <LoadingComponent />;
     return (
       <Grid>
         <UserDetailedHeader profile={profile} />
         <UserDetailedDescription profile={profile} />
-        <UserDetailedSidebar isCurrentUser={isCurrentUser}/>
+        <UserDetailedSidebar isCurrentUser={isCurrentUser} />
         {photos && photos.length > 0 && <UserDetailedPhotos photos={photos} />}
-        <UserDetailedEvents />
+        <UserDetailedEvents  changeTab={this.changeTab} events={events} eventsLoading={eventsLoading} />
       </Grid>
     );
   }
 }
 
 export default compose(
-  connect(mapStateToProps),
+  connect(mapStateToProps, mapDispatchToProps),
   firestoreConnect((auth, userUid) => userDetailedQuery(auth, userUid))
 )(UserDetailedPage);
