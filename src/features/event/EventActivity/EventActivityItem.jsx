@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
 import { Feed } from 'semantic-ui-react';
 import { Link } from 'react-router-dom';
-import {formatDistance} from 'date-fns';
+import { formatDistance } from 'date-fns';
 
 class EventActivityItem extends Component {
-  renderSummary = activity => {
+  renderSummary = (activity) => {
     switch (activity.type) {
       case 'newEvent':
         return (
@@ -17,7 +17,7 @@ class EventActivityItem extends Component {
               {activity.hostedBy}
             </Feed.User>{' '}
             is hosting{' '}
-            <Link to={{ pathname: '/event/' + activity.eventId }}>
+            <Link to={{ pathname: '/events/' + activity.eventId }}>
               {activity.title}
             </Link>
           </div>
@@ -33,7 +33,7 @@ class EventActivityItem extends Component {
               {activity.hostedBy}
             </Feed.User>{' '}
             has cancelled{' '}
-            <Link to={{ pathname: '/event/' + activity.eventId }}>
+            <Link to={{ pathname: '/events/' + activity.eventId }}>
               {activity.title}
             </Link>
           </div>
@@ -55,7 +55,11 @@ class EventActivityItem extends Component {
           <Feed.Summary>{this.renderSummary(activity)}</Feed.Summary>
           <Feed.Meta>
             <Feed.Date>
-              {formatDistance(activity.timestamp && activity.timestamp.toDate(), Date.now())} ago
+              {formatDistance(
+                activity.timestamp && activity.timestamp.toDate(),
+                Date.now()
+              )}{' '}
+              ago
             </Feed.Date>
           </Feed.Meta>
         </Feed.Content>

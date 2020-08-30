@@ -13,7 +13,7 @@ import { goingToEvent, cancelGoingToEvent } from '../../user/userActions';
 import { addEventComment } from '../eventActions';
 
 const mapStateToProps = (state, ownProps) => {
-  const eventId = ownProps.match.params.id;
+  // const eventId = ownProps.match.params.id;
 
   let event = {};
 
@@ -21,18 +21,21 @@ const mapStateToProps = (state, ownProps) => {
   //   event = state.events.filter(event => event.id === eventId)[0];
   // }
 
-  if (
-    state.firestore.ordered.events &&
-    state.firestore.ordered.events.length > 0
-  ) {
-    event =
-      state.firestore.ordered.events.filter(
-        (event) => event.id === eventId
-      )[0] || {};
+  // if (state.firestore.ordered.events && state.firestore.ordered.events.length > 0) {
+  //   event =
+  //     state.firestore.ordered.events.filter(
+  //       (event) => event.id === eventId
+  //     )[0] || {};
+  // }
+
+  // in 443 shows different like this...
+  if (state.firestore.ordered.events && state.firestore.ordered.events[0]) {
+    event = state.firestore.ordered.events[0] ;
   }
 
   return {
     event,
+    loading: state.async.loading,
     auth: state.firebase.auth,
     eventChat:
       !isEmpty(state.firebase.data.event_chat) &&
@@ -66,6 +69,7 @@ class EventDetailedPage extends Component {
   }
   render() {
     const {
+      loading,
       event,
       auth,
       goingToEvent,
@@ -83,6 +87,7 @@ class EventDetailedPage extends Component {
         <GridColumn width={10}>
           <EventDetailedHeader
             event={event}
+            loading={loading}
             isGoing={isGoing}
             isHost={isHost}
             goingToEvent={goingToEvent}

@@ -52,6 +52,7 @@ const mapStateToProps = (state, ownProps) => {
   return {
     initialValues: event,
     event,
+    loading: state.async.loading,
   };
 };
 
@@ -95,7 +96,6 @@ class EventForm extends Component {
     // >> NB. this versions need to unset the listener when unmount, unlike using connect() <<
     await firestore.setListener(`events/${match.params.id}`);
 
-
     // === THE VERSION THAT GETS DATA === get()
     // const { firestore, match, history } = this.props;
     // // << getting the event from firestore that matches the parameters of the route >>
@@ -107,14 +107,13 @@ class EventForm extends Component {
     //   this.setState({
     //     // because it otherwise would be null ...
     //     venueLatLng: event.data().venueLatLng,
-      // });
+    // });
     // }
   }
 
   async componentWillUnmount() {
     const { firestore, match } = this.props;
     await firestore.unsetListener(`events/${match.params.id}`);
-
   }
 
   // state = { ...this.props.event };
@@ -131,21 +130,14 @@ class EventForm extends Component {
     try {
       values.venueLatLng = this.state.venueLatLng;
       if (this.props.initialValues.id) {
-        if(Object.keys(values.venueLatLng).length === 0) {
-          values.venueLatLng = this.props.event.venueLatLng
+        if (Object.keys(values.venueLatLng).length === 0) {
+          values.venueLatLng = this.props.event.venueLatLng;
         }
-        this.props.updateEvent(values);
+        await this.props.updateEvent(values);
         this.props.history.push(`/events/${this.props.initialValues.id}`);
       } else {
-        // const newEvent = {
-        //   ...values,
-        //   id: cuid(),
-        //   hostPhotoURL: '/assets/user.png',
-        //   hostedBy: 'Bob',
-        // };
         let createdEvent = await this.props.createEvent(values);
         this.props.history.push(`/events/${createdEvent.id}`);
-        // this.props.history.push(`/events`);
       }
     } catch (error) {
       console.log(error);
@@ -203,6 +195,7 @@ class EventForm extends Component {
       pristine,
       event,
       cancelToggle,
+      loading,
     } = this.props;
 
     return (
@@ -261,6 +254,7 @@ class EventForm extends Component {
 
               <Button
                 disabled={invalid || submitting || pristine}
+                loading={loading}
                 positive
                 type='submit'
               >
@@ -273,6 +267,7 @@ class EventForm extends Component {
                     : () => history.push('/events')
                 }
                 type='button'
+                disabled={loading}
               >
                 Cancel
               </Button>

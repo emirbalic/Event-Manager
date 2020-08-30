@@ -98,27 +98,78 @@ export const deletePhoto = (photo) => async (
 
 export const setMainPhoto = (photo) => async (
   dispatch,
-  getState,
-  { getFirebase }
+  getState
+  // { getFirebase }
 ) => {
-  const firebase = getFirebase();
+  // not sure wht is difference #217
+  // const firebase = getFirebase();
+  const firestore = firebase.firestore();
+  const user = firebase.auth().currentUser;
+  const today = new Date();
+  let userDocRef = firestore.collection('users').doc(user.uid);
+  let eventAttendeeRef = firestore.collection('event_attendee');
+
   try {
-    return await firebase.updateProfile({
+    // return await firebase.updateProfile({
+    //   photoURL: photo.url,
+    // });
+
+    // #217 == avoid duplication of user photos ==
+
+    dispatch(asyncActionStart())
+
+    let batch = firestore.batch();
+
+    batch.update(userDocRef, {
       photoURL: photo.url,
     });
+
+    let eventQuery = await eventAttendeeRef
+      .where('userUid', '==', user.uid)
+      .where('eventDate', '>=', today);
+
+    let eventQuerySnapshot = await eventQuery.get();
+
+    for (let i = 0; i < eventQuerySnapshot.docs.length; i++) {
+      let eventDocRef = await firestore
+        .collection('events')
+        .doc(eventQuerySnapshot.docs[i].data().eventId);
+
+      let event = await eventDocRef.get();
+      if(event.data().hostUid === user.uid) {
+        batch.update(eventDocRef, {
+          hostPhotoURL: photo.url,
+          [`attendees.${user.uid}.photoURL`]: photo.url
+        })
+      } else {
+        batch.update(eventDocRef, {
+          [`attendees.${user.uid}.photoURL`]: photo.url
+        })
+      }
+    }
+    // console.log(batch);
+    await batch.commit();
+
+    dispatch(asyncActionFinish);
+
   } catch (error) {
     console.log(error);
+    dispatch(asyncActionError());
+
     throw new Error('Problem setting main photo');
+
   }
 };
 
 export const goingToEvent = (event) => async (
   dispatch,
   getState,
-  { getFirebase, getFirestore }
+  // { getFirebase, getFirestore }
 ) => {
-  const firestore = getFirestore();
-  const firebase = getFirebase();
+  const firestore = firebase.firestore(); //getFirestore();
+  // const firebase = getFirebase();
+  dispatch(asyncActionStart());
+   
   const user = firebase.auth().currentUser;
   const profile = getState().firebase.profile;
   const attendee = {
@@ -129,19 +180,36 @@ export const goingToEvent = (event) => async (
     host: false,
   };
   try {
-    // eslint-disable-next-line no-restricted-globals
-    await firestore.update(`events/${event.id}`, {
-      [`attendees.${user.uid}`]: attendee,
-    });
-    await firestore.set(`event_attendee/${event.id}_${user.uid}`, {
-      eventId: event.id,
+    let eventDocRef = firestore.collection('events').doc(event.id);
+    let eventAttendeeDocRef = firestore.collection('event_attendee').doc(`${event.id}_${user.id}`);
+
+    await firestore.runTransaction(async (transaction) => {
+      await transaction.get(eventDocRef);
+      await transaction.update(eventDocRef, {
+        [`attendees.${user.uid}`]: attendee
+      })
+      await transaction.set(eventAttendeeDocRef, {
+        eventId: event.id,
       userUid: user.uid,
       eventDate: event.date,
       host: false,
-    });
+      })
+    })
+    // // eslint-disable-next-line no-restricted-globals
+    // await firestore.update(`events/${event.id}`, {
+    //   [`attendees.${user.uid}`]: attendee
+    // });
+    // await firestore.set(`event_attendee/${event.id}_${user.uid}`, {
+    //   eventId: event.id,
+    //   userUid: user.uid,
+    //   eventDate: event.date,
+    //   host: false,
+    // });
+    dispatch(asyncActionFinish());
     toastr.success('Success', 'You have signed up to an event');
   } catch (error) {
     console.log(error);
+    dispatch(asyncActionError());
     toastr.error('Oops', 'Problem signing to an event');
   }
 };
@@ -206,14 +274,17 @@ export const getUserEvents = (userUid, activeTab) => async (
 
     let events = [];
 
-    for (let i=0; i< querySnapshot.docs.length; i++) {
-       let evt = await firestore.collection('events').doc(querySnapshot.docs[i].data().eventId).get();
-       events.push({...evt.data(), id: evt.id});
+    for (let i = 0; i < querySnapshot.docs.length; i++) {
+      let evt = await firestore
+        .collection('events')
+        .doc(querySnapshot.docs[i].data().eventId)
+        .get();
+      events.push({ ...evt.data(), id: evt.id });
     }
 
-    dispatch({type: FETCH_EVENTS, payload: {events}});
-   
-    dispatch(asyncActionFinish())
+    dispatch({ type: FETCH_EVENTS, payload: { events } });
+
+    dispatch(asyncActionFinish());
   } catch (error) {
     console.log(error);
     dispatch(asyncActionError());

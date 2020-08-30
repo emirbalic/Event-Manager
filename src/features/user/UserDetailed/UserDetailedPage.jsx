@@ -45,7 +45,7 @@ const mapDispatchToProps = {
 class UserDetailedPage extends Component {
   async componentDidMount() {
     let events = await this.props.getUserEvents(this.props.userUid);
-    console.log(events);
+    console.log('events are: ', events);
   }
   
   changeTab = (e, data) => {

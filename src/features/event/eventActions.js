@@ -46,18 +46,56 @@ export const createEvent = (event) => {
 };
 
 export const updateEvent = (event) => {
-  return async (dispatch, getState, { getFirestore }) => {
-    const firestore = getFirestore();
+  return async (dispatch, getState) => {
+    //, { getFirestore }
+    const firestore = firebase.firestore();
+    
     try {
-      await firestore.update(`events/${event.id}`, event);
-      // dispatch({
-      //   type: UPDATE_EVENT,
-      //   payload: {
-      //     event,
-      //   },
-      // });
+      dispatch(asyncActionStart());
+
+
+      let eventDocRef = firestore.collection('events').doc(event.id);
+
+      let dateEqual = getState().firestore.ordered.events[0].date.isEqual(
+        event.date
+      );
+
+      if (!dateEqual) {
+        let batch = firestore.batch();
+        batch.update(eventDocRef, event);
+
+        let eventAttendeeRef = firestore.collection('event_attendee');
+        let eventAttendeeQuery = await eventAttendeeRef.where(
+          'eventId',
+          '==',
+          event.id
+        );
+        let eventAttendeeQuerySnapshot = await eventAttendeeQuery.get();
+
+        for (let i = 0; i < eventAttendeeQuerySnapshot.docs.length; i++) {
+          let eventAttendeeDocRef = await firestore
+            .collection('event_attendee')
+            .doc(eventAttendeeQuerySnapshot.docs[i].id);
+
+          batch.update(eventAttendeeDocRef, {
+            eventDate: event.date
+          })
+        }
+
+        await batch.commit();
+        dispatch(asyncActionFinish());
+
+      } else {
+        await eventDocRef.update(event);
+      }
+
+      // await firestore.update(`events/${event.id}`, event);
+      dispatch(asyncActionFinish());
       toastr.success('Success!', 'Event has been updated!');
+
     } catch (error) {
+      dispatch(asyncActionError());
+      console.log(error);
       toastr.error('Oops', 'Something went wrong');
     }
   };
@@ -111,10 +149,7 @@ export const getEventsForDashboard = (lastEvent) => async (
           .orderBy('date')
           .startAfter(startAfter)
           .limit(2))
-      : (query = eventsRef
-          .where('date', '>=', today)
-          .orderBy('date')
-          .limit(2));
+      : (query = eventsRef.where('date', '>=', today).orderBy('date').limit(2));
 
     let querySnapshot = await query.get();
 
@@ -156,8 +191,8 @@ export const addEventComment = (eventId, values, parentId) => async (
     photoURL: profile.photoURL || '/assets/user.png',
     uid: user.uid,
     text: values.comment,
-    date: Date.now()
-  }
+    date: Date.now(),
+  };
 
   try {
     await firebase.push(`event_chat/${eventId}`, newComment);
