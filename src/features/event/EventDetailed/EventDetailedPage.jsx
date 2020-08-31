@@ -11,6 +11,7 @@ import { compose } from 'redux';
 import { objectToArray, createDataTree } from '../../../app/common/util/helper';
 import { goingToEvent, cancelGoingToEvent } from '../../user/userActions';
 import { addEventComment } from '../eventActions';
+import { openModal } from '../../modals/modalActions';
 
 const mapStateToProps = (state, ownProps) => {
   // const eventId = ownProps.match.params.id;
@@ -47,6 +48,7 @@ const mapDispatchToProps = {
   goingToEvent,
   cancelGoingToEvent,
   addEventComment,
+  openModal
 };
 
 class EventDetailedPage extends Component {
@@ -69,6 +71,7 @@ class EventDetailedPage extends Component {
   }
   render() {
     const {
+      openModal,
       loading,
       event,
       auth,
@@ -82,6 +85,7 @@ class EventDetailedPage extends Component {
     const isHost = event.hostUid === auth.uid;
     const isGoing = attendees && attendees.some((a) => a.id === auth.uid);
     const chatTree = !isEmpty(eventChat) && createDataTree(eventChat);
+    const authenticated = auth.isLoaded && !auth.isEmpty; 
     return (
       <Grid>
         <GridColumn width={10}>
@@ -92,13 +96,16 @@ class EventDetailedPage extends Component {
             isHost={isHost}
             goingToEvent={goingToEvent}
             cancelGoingToEvent={cancelGoingToEvent}
+            authenticated={authenticated}
+            openModal={openModal}
           />
           <EventDetailedInfo event={event} />
+          { authenticated && 
           <EventDetailedChat
             addEventComment={addEventComment}
             eventId={event.id}
             eventChat={chatTree}
-          />
+          />}
         </GridColumn>
         <GridColumn width={6}>
           <EventDetailedSidebar attendees={attendees} />

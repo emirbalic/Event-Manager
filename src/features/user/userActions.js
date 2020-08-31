@@ -174,14 +174,18 @@ export const goingToEvent = (event) => async (
   const profile = getState().firebase.profile;
   const attendee = {
     going: true,
-    joinDate: firestore.FieldValue.serverTimestamp(),
+    // corrected at 447
+    // joinDate: firestore.FieldValue.serverTimestamp(),
+    joinDate: Date.now(),
+    // and maybe it should also be
+    // joinDate: new Date(),
     photoURL: profile.photoURL || '/assets/user.png',
     displayName: profile.displayName,
     host: false,
   };
   try {
     let eventDocRef = firestore.collection('events').doc(event.id);
-    let eventAttendeeDocRef = firestore.collection('event_attendee').doc(`${event.id}_${user.id}`);
+    let eventAttendeeDocRef = firestore.collection('event_attendee').doc(`${event.id}_${user.id}`); // or uid???
 
     await firestore.runTransaction(async (transaction) => {
       await transaction.get(eventDocRef);
