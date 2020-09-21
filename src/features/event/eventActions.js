@@ -30,6 +30,7 @@ export const createEvent = (event) => {
     const newEvent = createNewEvent(user, photoURL, event);
 
     try {
+      dispatch(asyncActionStart());
       let createdEvent = await firestore.add('events', newEvent);
       await firestore.set(`event_attendee/${createdEvent.id}_${user.uid}`, {
         eventId: createdEvent.id,
@@ -38,9 +39,11 @@ export const createEvent = (event) => {
         host: true,
       });
       toastr.success('Success!', 'Event has been created!');
+      dispatch(asyncActionFinish());
       return createdEvent;
     } catch (error) {
       toastr.error('Oops', 'Something went wrong');
+      dispatch(asyncActionError());
     }
   };
 };
@@ -202,24 +205,4 @@ export const addEventComment = (eventId, values, parentId) => async (
   }
 };
 
-// export const deleteEvent = (eventId) => {
-//   return {
-//     type: DELETE_EVENT,
-//     payload: {
-//       eventId,
-//     },
-//   };
-// };
-// export const loadEvents = () => {
-//   return async (dispatch) => {
-//     try {
-//       dispatch(asyncActionStart());
-//       const events = await fetchSampleDate();
-//       dispatch({ type: FETCH_EVENTS, payload: { events } });
-//       dispatch(asyncActionFinish());
-//     } catch (error) {
-//       console.log(error);
-//       dispatch(asyncActionError);
-//     }
-//   };
-// };
+

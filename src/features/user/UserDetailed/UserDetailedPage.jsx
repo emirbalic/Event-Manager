@@ -31,7 +31,7 @@ const mapStateToProps = (state, ownProps) => {
   return {
     profile, //: state.firebase.profile,
     userUid,
-    events: state.events,
+    events: state.events.userEvents,
     eventsLoading: state.async.loading,
     auth: state.firebase.auth,
     photos: state.firestore.ordered.photos,
@@ -69,6 +69,8 @@ class UserDetailedPage extends Component {
     // i.e. check for any prop in object if it is true
     const loading = Object.values(requesting).some((a) => a === true);
 
+    // console.log('events', events);
+    
     if (loading) return <LoadingComponent />;
     return (
       <Grid>
@@ -76,7 +78,7 @@ class UserDetailedPage extends Component {
         <UserDetailedDescription profile={profile} />
         <UserDetailedSidebar isCurrentUser={isCurrentUser} />
         {photos && photos.length > 0 && <UserDetailedPhotos photos={photos} />}
-        <UserDetailedEvents  changeTab={this.changeTab} events={events} eventsLoading={eventsLoading} />
+        <UserDetailedEvents  changeTab={this.changeTab} events={events.userEvents} eventsLoading={eventsLoading} />
       </Grid>
     );
   }

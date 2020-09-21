@@ -19,7 +19,7 @@ const query = [
   },
 ];
 const mapStateToProps = (state) => ({
-  events: state.events,
+  events: state.events.events,
   loading: state.async.loading,
   // remove events from firestore
   // events: state.firestore.ordered.events,
